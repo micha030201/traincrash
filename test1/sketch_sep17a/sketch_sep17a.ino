@@ -1,6 +1,7 @@
-#include "FastLED.h"
+#include <FastLED.h>
 
-// How many leds in your strip?
+#include "process.c"
+
 #define NUM_LEDS 8
 #define DATA_PIN A2
 #define FORWARD 0
@@ -9,7 +10,7 @@
 #define MEDIUM 50
 #define FAST 5
 
-CRGB leds[NUM_LEDS];
+static CRGB leds[NUM_LEDS];
 
 #pragma pack(1)
 
@@ -18,49 +19,63 @@ typedef struct paket
    uint8_t pos;
    uint16_t cur;
    uint16_t volt;
+   uint8_t check;
 } paket;
 
 union buff {
   struct paket p;
-  unsigned char mass[6]; 
+  unsigned char mass[7]; 
 };
 
-boolean direction = FORWARD;
-uint8_t incomingByte;
 union buff tmp;
+uint8_t tmp_pos = 0;
 
 void setup() { 
   FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
-  FastLED.setBrightness(20);
+  FastLED.setBrightness(15);
   Serial.begin(9600);
 }
 
-void loop() { 
-  if (Serial.available() >= 6) {
-    Serial.readBytes(tmp.mass, 6);
-    
-    incomingByte = tmp.p.pos;
-    Serial.print(tmp.p.pos);
-    Serial.print(' ');
-    Serial.print(tmp.p.cur);
-    Serial.print(' ');
-    Serial.print(tmp.p.volt);
-    Serial.print('\n');
-
-    
-
-    if(incomingByte == '1'){
-      for (int i = 0; i < NUM_LEDS; ++i) {
-        leds[i] = CRGB::Pink;
-        FastLED.show();
-      }
+void loop() {
+  if (Serial.available() >= 7) {
+    Serial.readBytes(tmp.mass, 7);
+    if (tmp.mass[6] != '\n') {
+      Serial.readBytes(tmp.mass, 1);
+      return;
     }
-    else if (incomingByte == '0'){
-      for (int i = 0; i < NUM_LEDS; ++i) {
-        leds[i] = CRGB(0, 0, 0);
-        FastLED.show();
-      }
+    if ((tmp.p.pos + tmp.p.cur + tmp.p.volt) % 256 == tmp.p.check) {
+      tmp_pos = tmp.p.pos;
+    } else {
+      tmp.p.pos = tmp_pos;
+      tmp.p.cur = 0;
+      tmp.p.volt = 0;
     }
+
+    process(tmp.p.pos, tmp.p.cur, tmp.p.volt);
+
+    for (int i = 8, j = 0; i < POSITIONS; ++i, ++j) {
+      switch (info[i].state) {
+        case GREEN:
+          leds[j] = CRGB(0, 255, 0);         
+          break;
+        case RED:
+          leds[j] = CRGB(255, 0, 0);
+          break;
+        case YELLOW:
+          leds[j] = CRGB(255, 255, 0);
+          break;
+        case WHITE:
+          leds[j] = CRGB(255, 255, 255);
+          break;
+        default:
+          leds[j] = CRGB(0, 0, 0);
+          break;
+      }
+      //Serial.print(info[i].state);
+      //Serial.print(' ');
+    }
+    //Serial.print('\n');
+
+    FastLED.show();
   }
-  delay(1);
 }

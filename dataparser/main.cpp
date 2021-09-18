@@ -7,7 +7,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <inttypes.h>
-#include <time.h>
 
 using namespace std;
 
@@ -15,6 +14,7 @@ struct paket {
     uint8_t pos;
     uint16_t cur;
     uint16_t volt;
+    uint8_t check;
 };
 
 void read_record(vector<vector<int>>& data) {
@@ -30,46 +30,42 @@ void read_record(vector<vector<int>>& data) {
         getline(fin, line);
         stringstream s(line);
         
-
-        while (getline(s, word, ',')) {
-            row.push_back(word);           
-        }
+        while (getline(s, word, ',')) row.push_back(word);
 
         if (row.size() != 0) {
             data[0].push_back(stoi(row[1]));
-            data[1].push_back(stoi(row[5]));
+            data[1].push_back(stoi(row[6]));
+            data[2].push_back(stoi(row[7]));
         }
     }
 }
 
 int main() {
-    vector<vector<int>> data(2, vector<int>());
+    vector<vector<int>> data(3, vector<int>());
     read_record(data);
 
-    int data1[1000];  //Random data we want to send
     FILE *file;
     struct paket tmp;
-    srand( time(NULL) );
-    file = fopen("/dev/ttyUSB0", "w");  //Opening device file
-    int i = 0;
+    file = fopen("/dev/ttyUSB0", "w");
 
-    for (int j = 0; j < 1000; ++j) {
-	    data1[j] = j;
-        tmp.pos = static_cast<uint8_t>(data1[j]);
-        tmp.cur = static_cast<uint16_t>(data1[j]);
-        tmp.volt = static_cast<uint16_t>(data1[j]);
-
+    for (int j = 0; j < data[0].size(); ++j) {
         
-        unsigned char cur1 = ((tmp.cur >> 8) & 255);
-        unsigned char cur2 = (tmp.cur & 255);
+            tmp.pos = static_cast<uint8_t>(data[0][j]);
+            tmp.cur = static_cast<uint16_t>(data[1][j]);
+            tmp.volt = static_cast<uint16_t>(data[2][j]);
+            tmp.check = tmp.pos + tmp.cur + tmp.volt;
+        
+            unsigned char cur1 = ((tmp.cur >> 8) & 255);
+            unsigned char cur2 = (tmp.cur & 255);
 
-        unsigned char volt1 = ((tmp.volt >> 8) & 255);
-        unsigned char volt2 = (tmp.volt & 255);
-        fprintf(file, "%c%c%c%c%c\n", tmp.pos, cur2, cur1, volt2, volt1); //Writing to the file
-        //fflush(file);
-        //printf("%hhd", data1)
-        sleep(1);
+            unsigned char volt1 = ((tmp.volt >> 8) & 255);
+            unsigned char volt2 = (tmp.volt & 255);
+
+            printf("%d %d %d\n", tmp.pos, tmp.cur, tmp.volt);
+        
+            fprintf(file, "%c%c%c%c%c%c\n", tmp.pos, cur2, cur1, volt2, volt1, tmp.check); 
     }
+
     fclose(file);
 
     return 0;
