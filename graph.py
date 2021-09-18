@@ -34,9 +34,9 @@ statess = []
 for line in fileinput.input():
     position, current, voltage, *states = map(int, line.split())
     positions.append(lut[position])
-    currents.append(current)
+    currents.append(current / 3)
     voltages.append(voltage)
-    powers.append(current * voltage / 1000)
+    powers.append((current // 50) * (voltage // 20))
     statess.append(states)
 
 statess = list(zip(*statess))
@@ -46,6 +46,7 @@ fig, ax = plt.subplots()
 plt.plot(positions)
 plt.plot(powers)
 plt.plot(states)
+plt.plot(currents)
 
 
 X = [[i           for _ in range(17)] for i in range(len(statess[0]) + 1)]

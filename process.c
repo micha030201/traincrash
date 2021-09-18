@@ -1,9 +1,21 @@
 #include <stdio.h>
 
 #define POSITIONS 16
+#define IGNORE_POWER_LOWER_THAN 50
 #define IGNORE_AFTER_POSITION_CHANGE 5
 #define IGNORE_IF_VARIATION_MORE_THAN 20
-#define CONSIDER_FIXED_AFTER 400
+#define YELLOW_IF_VARIATION_MORE_THAN 15
+
+#define FROM_WHITE_TO_GREEN 5
+#define FROM_WHITE_TO_YELLOW 5
+#define FROM_WHITE_TO_RED 5
+#define FROM_GREEN_TO_YELLOW 10
+#define FROM_GREEN_TO_RED 10
+#define FROM_YELLOW_TO_GREEN 400
+#define FROM_YELLOW_TO_RED 10
+#define FROM_RED_TO_GREEN 400
+#define FROM_RED_TO_YELLOW 400
+
 
 int is_green(unsigned char position, unsigned int power) {
     switch (position) {
@@ -84,10 +96,10 @@ int is_yellow(unsigned char position, unsigned int power) {
 }
 
 // power cache
-#define POWER_CACHE_LENGTH 4
+#define POWER_CACHE_LENGTH 8
 
-unsigned int power_cache[POWER_CACHE_LENGTH];
-unsigned char power_cache_index = 0;
+static unsigned int power_cache[POWER_CACHE_LENGTH];
+static unsigned char power_cache_index = 0;
 
 void power_cache_write(unsigned int power) {
     power_cache[power_cache_index] = power;
@@ -120,13 +132,15 @@ enum state {
     RED,
 };
 
-unsigned int step_in_position = 0;
-unsigned char last_position = 0;
+static unsigned int step_in_position = 0;
+static unsigned char last_position = 0;
+
+static unsigned int last_current = 0;
+static unsigned int since_current_last_fell = -20;
 
 struct position_info {
     enum state state;
-    unsigned int green_streak;
-    unsigned int yellow_streak;
+    unsigned int streak;
 };
 
 struct position_info info[POSITIONS];
@@ -144,41 +158,96 @@ void process(
     if (position != last_position) {
         last_position = position;
         step_in_position = 0;
+        last_current = 0;
+        since_current_last_fell = -20;
         return;
     }
     step_in_position++;
     if (step_in_position < 5) {
         return;
     }
+    since_current_last_fell++;
+    if (last_current > current + 5) {
+        since_current_last_fell = 0;
+    }
+    last_current = current;
     if (power_cache_max_diff() > IGNORE_IF_VARIATION_MORE_THAN) {
         return;
     }
+    if (power < IGNORE_POWER_LOWER_THAN) {
+        return;
+    }
 
-    enum state cur_state = GREEN;
-    if (!is_green(position, power)) {
+    enum state cur_state = RED;
+    if (is_yellow(position, power)) {
         cur_state = YELLOW;
     }
-    if (!is_yellow(position, power)) {
-        cur_state = RED;
+    if (is_green(position, power)) {
+        cur_state = GREEN;
+        //if (power_cache_max_diff() > YELLOW_IF_VARIATION_MORE_THAN) {
+        //    cur_state = YELLOW;
+        //}
     }
 
-    info[position].green_streak++;
-    info[position].yellow_streak++;
-    if (cur_state > info[position].state) {
-        if (cur_state == RED) {
-            info[position].green_streak = 0;
-            info[position].yellow_streak = 0;
+
+    if (info[position].streak == -1) {
+        info[position].streak = -2;
+    }
+    if (power_cache_max_diff() < 10) {
+        info[position].streak++;
+    } else {
+        info[position].streak = 0;
+    }
+
+    if (info[position].state == WHITE) {
+        switch (cur_state) {
+            case GREEN:
+                if (info[position].streak > FROM_WHITE_TO_GREEN) info[position].state = cur_state;
+                break;
+            case YELLOW:
+                if (info[position].streak > FROM_WHITE_TO_YELLOW) info[position].state = cur_state;
+                break;
+            case RED:
+                if (info[position].streak > FROM_WHITE_TO_RED) info[position].state = cur_state;
+                break;
         }
-        if (cur_state == YELLOW) {
-            info[position].green_streak = 0;
+    }
+    if (info[position].state == GREEN) {
+        switch (cur_state) {
+            case YELLOW:
+                if (info[position].streak > FROM_GREEN_TO_YELLOW) info[position].state = cur_state;
+                break;
+            case RED:
+                if (info[position].streak > FROM_GREEN_TO_RED) info[position].state = cur_state;
+                break;
         }
+    }
+    if (info[position].state == YELLOW) {
+        switch (cur_state) {
+            case GREEN:
+                if (info[position].streak > FROM_YELLOW_TO_GREEN) info[position].state = cur_state;
+                break;
+            case RED:
+                if (info[position].streak > FROM_YELLOW_TO_RED) info[position].state = cur_state;
+                break;
+        }
+    }
+    if (info[position].state == RED) {
+        switch (cur_state) {
+            case GREEN:
+                if (info[position].streak > FROM_RED_TO_GREEN) info[position].state = cur_state;
+                break;
+            case YELLOW:
+                if (info[position].streak > FROM_RED_TO_YELLOW) info[position].state = cur_state;
+                break;
+        }
+    }
+
+    if (
+            since_current_last_fell < 5
+            && ((info[position].state == GREEN && (cur_state == YELLOW || cur_state == RED))
+                || (info[position].state == YELLOW && cur_state == RED))
+        ) {
         info[position].state = cur_state;
-    }
-
-    if (info[position].yellow_streak > CONSIDER_FIXED_AFTER) {
-        info[position].state = YELLOW;
-    }
-    if (info[position].green_streak > CONSIDER_FIXED_AFTER) {
-        info[position].state = GREEN;
     }
 }
