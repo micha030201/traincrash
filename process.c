@@ -49,35 +49,35 @@ int is_yellow(unsigned char position, unsigned int power) {
         case 0:
             return !power;
         case 1:
-            return power > 40 && power < 110;
+            return power > 0 && power < 260;
         case 2:
-            return power > 100 && power < 260;
+            return power > 40 && power < 340;
         case 3:
-            return power > 190 && power < 340;
+            return power > 100 && power < 470;
         case 4:
-            return power > 265 && power < 470;
+            return power > 190 && power < 620;
         case 5:
-            return power > 350 && power < 620;
+            return power > 265 && power < 800;
         case 6:
-            return power > 425 && power < 800;
+            return power > 350 && power < 870;
         case 7:
-            return power > 520 && power < 870;
+            return power > 425 && power < 1020;
         case 8:
-            return power > 630 && power < 1020;
+            return power > 520 && power < 1140;
         case 9:
-            return power > 750 && power < 1140;
+            return power > 630 && power < 1250;
         case 10:
-            return power > 880 && power < 1250;
+            return power > 750 && power < 1370;
         case 11:
-            return power > 1000 && power < 1370;
+            return power > 880 && power < 1470;
         case 12:
-            return power > 1160 && power < 1470;
+            return power > 1000 && power < 1550;
         case 13:
-            return power > 1320 && power < 1550;
+            return power > 1160 && power < 1670;
         case 14:
-            return power > 1530 && power < 1670;
+            return power > 1320 && power < 1800;
         case 15:
-            return power > 1750 && power < 1800;
+            return power > 1530 && power < 1900;
         default:
             return 0;
     }

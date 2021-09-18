@@ -55,7 +55,7 @@ X = list(zip(*X))
 Y = list(zip(*Y))
 
 cmap = ListedColormap(["white", "green", "yellow", "red"])
-c = ax.pcolorfast(X, Y, statess, cmap=cmap, alpha=0.5)
+c = ax.pcolorfast(X, Y, statess, cmap=cmap, alpha=0.3)
 
 fig.tight_layout()
 plt.show()
