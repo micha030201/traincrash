@@ -145,6 +145,8 @@ struct position_info {
 
 struct position_info info[POSITIONS];
 
+static unsigned char info_changed = 0;
+
 void process(
         unsigned char position,
         unsigned int current,
@@ -199,6 +201,8 @@ void process(
         info[position].streak = 0;
     }
 
+    unsigned char prev_state = info[position].state;
+
     if (info[position].state == WHITE) {
         switch (cur_state) {
             case GREEN:
@@ -249,5 +253,9 @@ void process(
                 || (info[position].state == YELLOW && cur_state == RED))
         ) {
         info[position].state = cur_state;
+    }
+
+    if (info[position].state != prev_state) {
+      info_changed = 1;
     }
 }

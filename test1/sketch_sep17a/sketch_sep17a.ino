@@ -1,4 +1,5 @@
 #include <FastLED.h>
+#include <EEPROM.h>
 
 #include "process.c"
 
@@ -30,9 +31,43 @@ union buff {
 union buff tmp;
 uint8_t tmp_pos = 0;
 
-void setup() { 
+void draw() {
+  for (int i = 8, j = 0; i < POSITIONS; ++i, ++j) {
+    switch (info[i].state) {
+      case GREEN:
+        leds[j] = CRGB(0, 255, 0);         
+        break;
+      case RED:
+        leds[j] = CRGB(255, 0, 0);
+        break;
+      case YELLOW:
+        leds[j] = CRGB(255, 255, 0);
+        break;
+      case WHITE:
+        leds[j] = CRGB(255, 255, 255);
+        break;
+      default:
+        leds[j] = CRGB(0, 0, 0);
+        break;
+    }
+    //Serial.print(info[i].state);
+    //Serial.print(' ');
+  }
+  //Serial.print('\n');
+
+  FastLED.show();
+}
+
+void setup() {
   FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
   FastLED.setBrightness(15);
+  
+  for (int i = 0; i < POSITIONS; ++i) {
+    //EEPROM.write(i, 0);
+    info[i].state = (enum state) EEPROM.read(i);
+  }
+  draw();
+  
   Serial.begin(9600);
 }
 
@@ -53,29 +88,13 @@ void loop() {
 
     process(tmp.p.pos, tmp.p.cur, tmp.p.volt);
 
-    for (int i = 8, j = 0; i < POSITIONS; ++i, ++j) {
-      switch (info[i].state) {
-        case GREEN:
-          leds[j] = CRGB(0, 255, 0);         
-          break;
-        case RED:
-          leds[j] = CRGB(255, 0, 0);
-          break;
-        case YELLOW:
-          leds[j] = CRGB(255, 255, 0);
-          break;
-        case WHITE:
-          leds[j] = CRGB(255, 255, 255);
-          break;
-        default:
-          leds[j] = CRGB(0, 0, 0);
-          break;
-      }
-      //Serial.print(info[i].state);
-      //Serial.print(' ');
-    }
-    //Serial.print('\n');
+    draw();
 
-    FastLED.show();
+    if (info_changed) {
+      for (int i = 0; i < POSITIONS; ++i) {
+        EEPROM.write(i, info[i].state);
+      }
+      info_changed = 0;
+    }
   }
 }
