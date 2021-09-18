@@ -32,19 +32,24 @@ union buff tmp;
 uint8_t tmp_pos = 0;
 
 void draw() {
+  unsigned char scale;
   for (int i = 8, j = 0; i < POSITIONS; ++i, ++j) {
+    scale = 1;
+    if (i != last_position) {
+      scale = 4;
+    }
     switch (info[i].state) {
       case GREEN:
-        leds[j] = CRGB(0, 255, 0);         
+        leds[j] = CRGB(0, 255 / scale, 0);
         break;
       case RED:
-        leds[j] = CRGB(255, 0, 0);
+        leds[j] = CRGB(255 / scale, 0, 0);
         break;
       case YELLOW:
-        leds[j] = CRGB(255, 255, 0);
+        leds[j] = CRGB(255 / scale, 255 / scale, 0);
         break;
       case WHITE:
-        leds[j] = CRGB(255, 255, 255);
+        leds[j] = CRGB(255 / scale, 255 / scale, 255 / scale);
         break;
       default:
         leds[j] = CRGB(0, 0, 0);
@@ -53,6 +58,7 @@ void draw() {
     //Serial.print(info[i].state);
     //Serial.print(' ');
   }
+  //Serial.print(last_position);
   //Serial.print('\n');
 
   FastLED.show();
@@ -60,7 +66,7 @@ void draw() {
 
 void setup() {
   FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
-  FastLED.setBrightness(15);
+  FastLED.setBrightness(60);
   
   for (int i = 0; i < POSITIONS; ++i) {
     //EEPROM.write(i, 0);
