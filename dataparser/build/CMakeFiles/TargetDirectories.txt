@@ -1,0 +1,3 @@
+/home/kitfloppa/Desktop/tmp/traincrash/dataparser/build/CMakeFiles/edit_cache.dir
+/home/kitfloppa/Desktop/tmp/traincrash/dataparser/build/CMakeFiles/rebuild_cache.dir
+/home/kitfloppa/Desktop/tmp/traincrash/dataparser/build/CMakeFiles/parser.dir

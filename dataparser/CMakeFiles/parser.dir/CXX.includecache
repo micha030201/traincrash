@@ -1,0 +1,30 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/kitfloppa/Desktop/tmp/traincrash/dataparser/main.cpp
+iostream
+-
+sstream
+-
+string
+-
+fstream
+-
+vector
+-
+termios.h
+-
+fcntl.h
+-
+unistd.h
+-
+inttypes.h
+-
+time.h
+-
+
